@@ -82,8 +82,29 @@ def move_team(no):
         board[ox][oy] = 4
 
 
-def turn_direction():
-    pass
+def turn_direction(num):
+    # 방향을 전환할 때 꼬리사람부터 다시 거꾸로 머리사람이 꼬리사람이 된다
+    renew_team = []
+    for i in range(tails_idx[num],-1,-1):
+        renew_team.append(teams[num][i])
+    for i in range(len(teams[num])-1,tails_idx[num],-1):
+        renew_team.append(teams[num][i])
+    for i in range(tails_idx[num]+1):
+        # 맨처음 좌표는 머리이므로 머리사람을 붙인다
+        if i == 0:
+            hx,hy = renew_team[0]
+            board[hx][hy] = 1
+        elif 0 < i <= tails_idx[num]-1:
+            bx,by = renew_team[i]
+            board[bx][by] = 2
+        elif i == tails_idx[num]:
+            tx,ty = renew_team[i]
+            board[tx][ty] = 3
+    # 나머지는 동선을 표시해준다
+    for i in range(tails_idx[num]+1,len(renew_team)):
+        ox,oy = renew_team[i]
+        board[ox][oy] = 4
+    teams[num] = renew_team
 
 def throw_balls(round):
     # k라운드에 공이 한방향으로 모두 던져짐
@@ -100,8 +121,7 @@ def throw_balls(round):
                 num_of_team = groups[round][y]
                 position = teams[num_of_team].index((round,y)) + 1
                 team_scores[num_of_team] += (position*position)
-                turn_direction()
-                print(round,y)
+                turn_direction(num_of_team)
                 break
 
     elif round < (2*n):
@@ -110,7 +130,7 @@ def throw_balls(round):
             if 1 <= board[x][round] <= 3:
                 num_of_team = groups[x][round]
                 position = teams[num_of_team].index((x, round)) + 1
-                team_scores[num_of_team] += (position * position)
+                team_scores[num_of_team] += (position*position)
                 turn_direction()
                 break
 
@@ -124,7 +144,7 @@ def throw_balls(round):
                 turn_direction()
                 break
     elif round < (4*n):
-        round %= (3*n)
+        round -= (3*n)
         for x in range(n):
             if 1 <= board[x][n-round] <= 3:
                 num_of_team = groups[x][n-round]
@@ -145,12 +165,12 @@ def simulate():
             move_team(no)
         # 각 라운드에 해당하는 방향에서 모든 행 또는 모든 열에서 공을 던져서 맞는 팀은 점수를 얻습니다
         throw_balls(round)
-    for i in range(m):
-        print(teams[i])
-    print(tails_idx)
-    print(team_scores)
-    for i in range(n):
-        print(*board[i])
+    # for i in range(m):
+    #     print(teams[i])
+    # print(tails_idx)
+    # print(team_scores)
+    # for i in range(n):
+    #     print(*board[i])
 
 # 입력부분
 
@@ -173,5 +193,5 @@ dx = [0,-1,0,1]
 dy = [1,0,-1,0]
 
 simulate()
-
-
+ans = sum(team_scores)
+print(ans)
