@@ -69,6 +69,12 @@ visited = [
     [False] * n
     for _ in range(n)
 ]
+temp = [
+    [
+        0 for _ in range(n)
+    ]
+    for _ in range(n)
+]
 
 # 현재까지 흐른 시간(분)을 나타냅니다.
 elapsed_time = 0
@@ -149,9 +155,13 @@ def blow():
                 clear_visited()
                 # 세기 5에서 시작하여 계속 전파합니다.
                 spread(nx, ny, move_dir, 5)
+                """
                 for i in range(n):
                     print(*coolness[i])
                 print('---------------------------------------------------------')
+                
+                """
+
 for _ in range(m):
     bx, by, bdir = tuple(map(int, input().split()))
     bx -= 1
@@ -169,17 +179,76 @@ for _ in range(m):
     if in_range(nx, ny):
         block[nx][ny][3 - bdir] = True
 
-def mix_coolness():
-    pass
 
-def boundary_minus():
-    pass
+def get_coolness(x,y):
+    remain_coolness = coolness[x][y]
+
+    for i,(dx,dy) in enumerate(zip(dxs,dys)):
+        nx,ny = x + dx , y + dy
+        if in_range(nx,ny) and not block[nx][ny][i]:
+            if coolness[x][y] > coolness[nx][ny]:
+                remain_coolness -= (coolness[x][y] - coolness[nx][ny]) // 4
+            else:
+                remain_coolness += (coolness[nx][ny] - coolness[x][y]) // 4
+    return remain_coolness
+def mix():
+    # 인접한 칸을 한 번만 계산하기 위해서 시원함을 빼는 계산인지 더하는 연산인지를 구분하면 된다
+    # 기준을 정하면 된다 한쪽이 빼면 다른쪽은 더하면 된다
+    # 동시처리를 하기 위해서는 이런 테크닉을 써야한다
+    # 순차처리라면 임시관리테이블에 저장할 필요가 없지만
+    # 동시다발성이라면 임시저장테이블에 데이터 변형 없이 바로 적용한다
+    for i in range(n):
+        for j in range(n):
+            temp[i][j] = 0
+    for i in range(n):
+        for j in range(n):
+            temp[i][j] = get_coolness(i,j)
+    for i in range(n):
+        for j in range(n):
+            coolness[i][j] = temp[i][j]
+
+def down():
+    # 외곽쪽의 칸들의 시원함을 1씩 감소한다는건 어떤 아이디어로 접근해야 하는가?
+    # 0행 0열 n-1행 n-1열들은 모두 1씩 감소시키면 된다
+
+    for i in range(n):
+        for j in range(n):
+            if i == 0 or j == 0 or i == n-1 or j == n-1:
+                if coolness[i][j] > 0:
+                    coolness[i][j] -= 1
+
+
+
+def end():
+    # 100분이상이 되면 멈춤
+    if elapsed_time > 100:
+        return True
+    for i in range(n):
+        for j in range(n):
+            # 끝나지 않고 다음 시뮬레이션을 진행한다는 의미
+            if grid[i][j] == OFFICE and coolness[i][j] < k:
+                return False
+    # 모두 k 이상이므로, 종료해야함
+    return True
+
 
 def simulate():
-    blow()
-    # 디버깅 작업
+    global elapsed_time
+    # 1분마다 다음과 같은 시뮬레이션을 진행합니다
+    blow() # 에어컨이 작동합니다
+    mix() # 인접한 칸끼리 시원함을 섞습니다
+    down() # 외곽칸들의 시원함을 1씩 감소시킵니다
+    elapsed_time += 1
+# 시뮬레이션이 목표에 도달할때까지 우선 돌리며 시간을 계산한다
+
+while not end():
+    simulate()
+# 100분까지는 그대로 진행함
+if elapsed_time <= 100:
+    print(elapsed_time)
+else:
+    print(-1)
 
 
-simulate()
 
 
